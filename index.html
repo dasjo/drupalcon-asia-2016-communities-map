@@ -10,32 +10,26 @@
     body { margin:0; padding:0; }
     #map { position:absolute; top:0; bottom:0; width:100%; }
 
-    .leaflet-marker-icon {
-      margin-left: 3px;
-      margin-top: 3px;
-      border: none;
-      background: none;
-    }
-    .leaflet-marker-icon:not(.marker-cluster) {
-      width: 50px !important;
-      height: 50px !important;
-    }
-    .leaflet-marker-icon.marker-cluster {
-      width: 34px;
-      height: 34px;
-      border-radius: 17px;
-    }
-
-    .leaflet-marker-icon img {
+    .leaflet-div-icon {
       border-radius: 10px;
       border: 3px solid #222;
       height: auto;
-      max-width: 100%;
+      width: auto;
       background-color: #bdd7d1;
+      padding: 0.5em;
     }
-    .leaflet-marker-icon:hover img {
+    .leaflet-div-icon:hover {
       border: 3px solid #fff;
       background-color: #f0f0f0;
+    }
+
+    #tags {
+      position: absolute;
+      top: 0;
+      right: 0;
+      background: #fff;
+      width: 150px;
+      padding:5px;
     }
 
   </style>
@@ -46,29 +40,46 @@
 <link href='https://api.mapbox.com/mapbox.js/plugins/leaflet-markercluster/v0.4.0/MarkerCluster.css' rel='stylesheet' />
 <link href='https://api.mapbox.com/mapbox.js/plugins/leaflet-markercluster/v0.4.0/MarkerCluster.Default.css' rel='stylesheet' />
 
+
 <div id='map'></div>
+
+<form id='tags'>
+  <div><input type='checkbox' name='filters' onclick='filterTags();' value='Active' checked> Active</div>
+  <div><input type='checkbox' name='filters' onclick='filterTags();' value='Other' checked> Other</div>
+</form>
 
 <script>
   L.mapbox.accessToken = 'pk.eyJ1IjoiYW1hemVlIiwiYSI6IjZRRjIwbFEifQ.Hp-wmc_tLxw7dlbcB8aaIg';
   var map = L.mapbox.map('map', 'mapbox.light');
+
+  var overlays = L.layerGroup().addTo(map);
+
+  // we create the 'layers' variable outside of the on('ready' callback
+  // so that it can be accessible in the showStations function. Otherwise,
+  // JavaScript scope would prevent you from accessing it.
+  var layers;
 
   // As with any other AJAX request, this technique is subject to the Same Origin Policy:
   // http://en.wikipedia.org/wiki/Same_origin_policy
   // So the CSV file must be on the same domain as the Javascript, or the server
   // delivering it should support CORS.
   var featureLayer = L.mapbox.featureLayer()
-    .loadURL('http://dasjo.github.io/drupalcon-asia-2016-map/data.geojson')
+    .loadURL(window.location.href + '/data.geojson')
     .on('ready', function(e) {
+      layers = e.target;
+      filterTags();
+
       // The clusterGroup gets each marker in the group added to it
       // once loaded, and then is added to the map
       var clusterGroup = new L.MarkerClusterGroup();
 
       e.target.eachLayer(function(layer) {
-        var content = '<a href="' + layer.feature.properties.Link + '" target="_blank">' + layer.feature.properties["Name"] + '</a>';
+        var content = '<a href="' + layer.feature.properties.Groups + '" target="_blank">' + layer.feature.properties["Region"] + '</a>';
         layer.bindPopup(content);
         layer.setIcon(L.divIcon({
-          html: '<img src="' + layer.feature.properties.Pic + '" />',
-          class: 'my-div-icon'
+          html: content,
+          class: 'my-div-icon',
+          iconSize:null
         }));
         clusterGroup.addLayer(layer);
       });
@@ -76,8 +87,34 @@
       map.fitBounds(clusterGroup.getBounds());
       var credits = L.control.attribution().addTo(map);
       credits.addAttribution("<a href='https://events.drupal.org/asia2016/community'>DrupalCon Asia 2016 Attendees</a>, Source on <a href='https://github.com/dasjo/drupalcon-asia-2016-map'>github</a>");
-    });
+    }
+  );
 
+  var filters = document.getElementById('tags').filters;
+
+  // There are many ways to filter data. Mapbox.js has the .setFilter method,
+  // but it only applies to L.mapbox.featureLayer layers, and that isn't what
+  // we're creating - we're making marker groups in a MarkerClusterGroup layer.
+  // Thus we distill filtering down to its essential part: an 'if' statement
+  // in a loop.
+  function filterTags() {
+    // first collect all of the checked boxes and create an array of strings
+    // like ['green', 'blue']
+    var list = [];
+    for (var i = 0; i < filters.length; i++) {
+      if (filters[i].checked) list.push(filters[i].value);
+    }
+    // then remove any previously-displayed marker groups
+    overlays.clearLayers();
+    // create a new marker group
+    var clusterGroup = new L.MarkerClusterGroup().addTo(overlays);
+    // and add any markers that fit the filtered criteria to that group.
+    layers.eachLayer(function(layer) {
+      if (list.indexOf(layer.feature.properties.Type) !== -1) {
+        clusterGroup.addLayer(layer);
+      }
+    });
+  }
 </script>
 </body>
 </html>
