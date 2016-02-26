@@ -16,6 +16,9 @@
       height: auto;
       width: auto;
       background-color: #bdd7d1;
+    }
+    .leaflet-div-icon a {
+      display: block;
       padding: 0.5em;
     }
     .leaflet-div-icon:hover {
@@ -44,8 +47,8 @@
 <div id='map'></div>
 
 <form id='tags'>
-  <div><input type='checkbox' name='filters' onclick='filterTags();' value='Active' checked> Active</div>
-  <div><input type='checkbox' name='filters' onclick='filterTags();' value='Other' checked> Other</div>
+  <div><input id="type_active" type='checkbox' name='filters' onclick='filterTags();' value='Active' checked> Active</div>
+  <div><input id="type_other" type='checkbox' name='filters' onclick='filterTags();' value='Other' checked> Other</div>
 </form>
 
 <script>
@@ -75,7 +78,7 @@
 
       e.target.eachLayer(function(layer) {
         var content = '<a href="' + layer.feature.properties.Groups + '" target="_blank">' + layer.feature.properties["Region"] + '</a>';
-        layer.bindPopup(content);
+        //layer.bindPopup(content);
         layer.setIcon(L.divIcon({
           html: content,
           class: 'my-div-icon',
@@ -83,10 +86,13 @@
         }));
         clusterGroup.addLayer(layer);
       });
-      map.addLayer(clusterGroup);
       map.fitBounds(clusterGroup.getBounds());
+      map.addLayer(clusterGroup);
       var credits = L.control.attribution().addTo(map);
+      
       credits.addAttribution("<a href='https://events.drupal.org/asia2016/community'>DrupalCon Asia 2016 Attendees</a>, Source on <a href='https://github.com/dasjo/drupalcon-asia-2016-map'>github</a>");
+
+      document.getElementById("type_other").click();
     }
   );
 
