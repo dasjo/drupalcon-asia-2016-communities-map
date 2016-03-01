@@ -74,7 +74,9 @@
 
       // The clusterGroup gets each marker in the group added to it
       // once loaded, and then is added to the map
-      var clusterGroup = new L.MarkerClusterGroup();
+      var clusterGroup = new L.MarkerClusterGroup({
+        spiderfyDistanceMultiplier: 2
+      });
 
       e.target.eachLayer(function(layer) {
         var content = '<a href="' + layer.feature.properties.Groups + '" target="_blank">' + layer.feature.properties["Region"] + '</a>';
